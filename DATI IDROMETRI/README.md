@@ -7,7 +7,7 @@ In *valid data* contiene i dati considerati validi, ovvero con meno di 3 anni ma
 ### IDROMETRI SELEZIONATI
 * Calcara   
                                                             
-* Casalecchio canale (due stazioni)                                                   
+* Casalecchio canale (due stazioni: Casalecchio canale e Casalecchio tiro a volo)                                                   
 * Castrocaro                                                            
 * Imola                                                                 
 * Lugo                                                                  

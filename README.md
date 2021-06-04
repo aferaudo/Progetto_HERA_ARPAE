@@ -15,6 +15,8 @@ Questo repository contiene tutti i dati e gli script usati per la realizzazione 
 
 * Coordinate degli idrometri selezionati aventi dati almeno fino a fine 2018 (fonte dexter)
 
+* Portata media giornaliera degli idrometri selezionati
+
 ### Dati aggiuntivi
 * Tabella StatoPozzi contenente lo stato di ogni singolo pozzo (questo dovrebbe variare in base al calcolo del percentile)
 
@@ -22,9 +24,13 @@ Questo repository contiene tutti i dati e gli script usati per la realizzazione 
 
 
 ## TODO
-* Inserire dati di Portata media giornaliera degli idrometri
 
 * Inserire dati Pluviometri (media mensile o settimanale?)
+
 *  Inserirei i nivometri di Doccia di Fiumalbo e Monteacuto delle Alpi insieme ai pluviometri
+
 * Script per il calcolo del percentile (potrebbe essere unificato con il successivo)
+
 * Script monitoraggio dello stato di una rete (attualmente lo script cambia il colore basandosi sul dato letto nella tabella stato pozzi)
+
+* Script che automatizza il processo di inserimento dati nel db

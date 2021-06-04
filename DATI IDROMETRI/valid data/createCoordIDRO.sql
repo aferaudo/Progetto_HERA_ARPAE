@@ -12,7 +12,7 @@ CREATE TABLE [dbo].[coord_idro](
 	[Nome] [nvarchar](70) NOT NULL,
 	[lat] [float] NOT NULL,
 	[long] [float] NOT NULL,
-	[provincia] [nvarchar](50) NOT NULL,
+	[Territorio] [nvarchar](50) NOT NULL,
  CONSTRAINT [PK_coord_idro] PRIMARY KEY CLUSTERED 
 (
 	[Nome] ASC

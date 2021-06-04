@@ -16,7 +16,7 @@ file_list = os.listdir(".")
 
 
 
-query = "INSERT INTO dbo.COORD_IDRO (nome,provincia,lat,long) values(?,?,?,?)"
+query = "INSERT INTO dbo.COORD_IDRO (nome,territorio,lat,long) values(?,?,?,?)"
 
 
 for k, file_name in enumerate(file_list):
@@ -25,24 +25,22 @@ for k, file_name in enumerate(file_list):
         continue
 
     coordinate_sheet = pd.read_excel(file_name, sheet_name="Tabella delle stazioni")
-    if len(coordinate_sheet) > 1:
-        temp = coordinate_sheet.head(1)
-        nome = file_name.split("(")[0]
-        provincia = temp["Provincia"].values[0]
-        lat = temp["Latitudine (Gradi Centesimali)"].values[0]
-        lon = temp["Longitudine (Gradi Centesimali)"].values[0]
-    else:
-        nome = coordinate_sheet["Nome della stazione"].values[0]
-        provincia = coordinate_sheet["Provincia"].values[0]
-        lat = coordinate_sheet["Latitudine (Gradi Centesimali)"].values[0]
-        lon = coordinate_sheet["Longitudine (Gradi Centesimali)"].values[0]
-    
-    print("NOME: {}".format(nome))
-    print("Provincia: {}".format(provincia))
-    print("Latitudine: {}".format(lat))
-    print("Longitudine: {}".format(lon))
-    print("#######################################")
-    cursor.execute(query, nome, provincia, lat, lon)
-    cursor.commit()
+    for i, row in coordinate_sheet.iterrows():
+        nome = row["Nome della stazione"]
+        provincia = row["Provincia"]
+        lat = row["Latitudine (Gradi Centesimali)"]
+        lon = row["Longitudine (Gradi Centesimali)"]
+
+        
+        if provincia == "FORLI-CESENA":
+            provincia = "FORLICESENA"
+        
+        print("NOME: {}".format(nome))
+        print("Provincia: {}".format(provincia))
+        print("Latitudine: {}".format(lat))
+        print("Longitudine: {}".format(lon))
+        print("#######################################")
+        cursor.execute(query, nome, provincia, lat, lon)
+        cursor.commit()
 print("bellali")
 cursor.close()
