@@ -23,14 +23,28 @@ Questo repository contiene tutti i dati e gli script usati per la realizzazione 
 * Tabella link_geo_maps usata per rendere la home dashboard cliccabile
 
 
+
+
 ## TODO
+
+* Aggiornare tabella stato pozzi con i nuovi pozzi di Bologna inseriti: da fare dopo aver ricevuto i dati di livello
+
+* Aggiornare DATI di RIMINI (HERA) e rimuovere quelli attuali
+
+* Aggiungere territorio nella tabella coord (?)
+
+* Aggiornare tabella coord con ON DELETE CASCADE
 
 * Inserire dati Pluviometri (media mensile o settimanale?)
 
-*  Inserirei i nivometri di Doccia di Fiumalbo e Monteacuto delle Alpi insieme ai pluviometri
+*  Inserire i nivometri di Doccia di Fiumalbo e Monteacuto delle Alpi insieme ai pluviometri
 
 * Script per il calcolo del percentile (potrebbe essere unificato con il successivo)
 
 * Script monitoraggio dello stato di una rete (attualmente lo script cambia il colore basandosi sul dato letto nella tabella stato pozzi)
 
 * Script che automatizza il processo di inserimento dati nel db
+
+****
+#### Note varie
+* I dati del pozzo MANZOLINO 7 (HERA) sono stati completamente rimossi per un problema sulla sonda

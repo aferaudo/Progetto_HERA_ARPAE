@@ -17,18 +17,6 @@ INSERT INTO [dbo].[coord]
            ('SECC'
            ,43.91934900
            ,12.31475400)
-		   INSERT INTO [dbo].[coord]
-           ([cod_pozzo]
-           ,[lat]
-           ,[long])
-     VALUES
-           ('MAN7'
-           ,44.59808200
-           ,11.12534800)
-		   INSERT INTO [dbo].[coord]
-           ([cod_pozzo]
-           ,[lat]
-           ,[long])
      VALUES
            ('MAG2'
            ,44.51597500
@@ -169,7 +157,27 @@ INSERT INTO [dbo].[coord]
            ('RN0600'
            ,43.96747436
            ,12.71626146)
-
+           INSERT INTO [dbo].[coord]
+           ([cod_pozzo]
+           ,[lat]
+           ,[long])
+     VALUES('Borgo-Pan-8'
+           ,44.5139
+           ,11.2904)
+           INSERT INTO [dbo].[coord]
+           ([cod_pozzo]
+           ,[lat]
+           ,[long])
+     VALUES('Tiro-Segno-1'
+           ,44.5159
+           ,11.3024)
+           INSERT INTO [dbo].[coord]
+           ([cod_pozzo]
+           ,[lat]
+           ,[long])
+     VALUES('S-Vitale-7'
+           ,44.5476
+           ,11.3054)
 GO
 
 
