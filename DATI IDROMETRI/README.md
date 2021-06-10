@@ -12,7 +12,8 @@ In *valid data* contiene i dati considerati validi, ovvero con meno di 3 anni ma
 * Imola                                                                 
 * Lugo                                                                  
 * Pizzocalvo                                                            
-* Ponte Bacchello                                                       
+* Ponte Bacchello
+* Pontelagoscuro                                                       
 * Rubiera SS9                                                           
 * San Carlo                                                             
 * Santarcangelo di Romagna                                              

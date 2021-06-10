@@ -2,10 +2,37 @@
 
 Questa cartella contiene i dati delle coordinate dei pluviometri forniti da ARPAE (503).
 
-*TODO inserire i dati di monitoraggio piogge*
 
 ## DATABASE
 
-* Coordinate di tutti i Pluviometri
+* Coordinate dei Pluviometri selezionati
 
 * **TEMPORANEO** Coordinate delle reti di pluviometri (calcolate come media delle coordinate dei pluviometri appartenenti ad una rete): file *insertCoordPluv_ex.sql* 
+
+### PLUVIOMETRI SELEZIONATI
+
+* Ponte Verucchio
+
+* Casola Valsenio-simnbo 
+
+* Casola Valsenio-idrost
+
+* Monteombraro-simnbo 
+
+* Serramazzoni      
+
+* Monteombraro-idrost      
+
+* Forli' urbana 
+
+* Farneta           
+
+* Vergato             
+
+* Brisighella-agrmet    
+
+* Brisighella-idrost   
+
+* San Valentino 
+
+* Imola       

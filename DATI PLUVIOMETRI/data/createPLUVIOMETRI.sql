@@ -1,0 +1,23 @@
+USE [Hera]
+GO
+
+/****** Object:  Table [dbo].[PLUVIOMETRI] ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[PLUVIOMETRI](
+	[data_ora] [datetime] NOT NULL,
+	[Precipitazione] [float] NOT NULL,
+    [nome] [nvarchar](70) NOT NULL
+) ON [PRIMARY]
+GO
+
+ALTER TABLE [dbo].[PLUVIOMETRI]  WITH CHECK ADD  CONSTRAINT [FK_PLUVIOMETRI_COORD_PLUV] FOREIGN KEY([Nome])
+REFERENCES [dbo].[coord_pluv] ([Nome])
+GO
+
+ALTER TABLE [dbo].[PLUVIOMETRI] CHECK CONSTRAINT [FK_PLUVIOMETRI_COORD_PLUV]
+GO
