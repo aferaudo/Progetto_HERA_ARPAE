@@ -5,9 +5,10 @@ Questo repository contiene tutti i dati e gli script usati per la realizzazione 
 ## Dati attualmente nel DB
 ### Dati di contesto
 **N.B.** Per dettagli riguardo pozzi, idrometri e pluviometri leggere README files delle rispettive cartelle.
-* Coordinate Pozzi
 
-* Livello e portata Pozzi
+* Coordinate Pozzi (anche nuovi pozzi HERA)
+
+* Livello e portata Pozzi (anche nuovi pozzi HERA)
 
 * Coordinate dei Pluviometri selezionati
 
@@ -29,24 +30,22 @@ Questo repository contiene tutti i dati e gli script usati per la realizzazione 
 
 ## TODO
 
-* Aggiornare tabella stato pozzi con i nuovi pozzi di Bologna inseriti: da fare dopo aver ricevuto i dati di livello
-
-* Aggiornare DATI di RIMINI (HERA) e rimuovere quelli attuali
-
-* Aggiungere territorio nella tabella coord (?)
+* Controllare script percentile
 
 * Aggiornare tabella coord con ON DELETE CASCADE
 
 * Inserire i nivometri di Doccia di Fiumalbo e Monteacuto delle Alpi insieme ai pluviometri
 
-* Script per il calcolo del percentile (potrebbe essere unificato con il successivo)
-
-* Script monitoraggio dello stato di una rete (attualmente lo script cambia il colore basandosi sul dato letto nella tabella stato pozzi)
-
 * Script che automatizza il processo di inserimento dati nel db
 
 * Divisione pozzi per appartenenza: Visualizzazione dei semafori relativi ai pozzi ARPAE ed HERA separata
 
+* Diminuire numero di richieste di geojson files (grafana-map-panel)
+
 ****
 #### Note varie
 * I dati del pozzo MANZOLINO 7 (HERA) sono stati completamente rimossi per un problema sulla sonda
+
+* Pozzi Campiano e Pianacci di Rimini pochi dati validi (*aggiornati*)
+
+* Script per il calcolo del percentile considera solo i livelli con portata <= 0.3: deve essere chiamato manualmente per ora, in futuro dovrà essere chiamato da chi va ad effettuare l'update settimanale/mensile dei dati, in modo da ottenere il seguente comportamento: *ogni volta che nuovi dati vengono inseriti il percentile cambia e di conseguenza cambia anche la soglia che provoca una modifica dello stato dei singoli pozzi*

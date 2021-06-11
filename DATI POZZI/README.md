@@ -1,7 +1,7 @@
 # DATI POZZI
-In questa cartella è possibile trovare tutti i dati in CSV dei pozzi presenti attualmente nel DB.
+In questa cartella è possibile trovare la maggior parte dei dati in CSV dei pozzi presenti attualmente nel DB.
 
-Questi CSV sono stati creati a partire dai dati della directory DATI PER ALGORITMO 
+Alcuni di questi sono stati creati a partire dai dati della directory DATI PER ALGORITMO 
 ## Lista dei pozzi nel DataBase
 ### HERA
 **BOLOGNA**
@@ -10,6 +10,12 @@ Questi CSV sono stati creati a partire dai dati della directory DATI PER ALGORIT
 * MAG2                                              
 
 * MAN7   
+
+* BoPan8
+
+* SVit7
+
+* TSegno1
 
 *TODO*
 *verifica seconda metà del 2018 Manzolino 7*
@@ -26,14 +32,12 @@ Questi CSV sono stati creati a partire dai dati della directory DATI PER ALGORIT
 
 **RIMINI**
 
-* CAMP                                              
+* CAMP
                                             
 * PIAN
 
 * SECC           
 
-*TODO*
-*da verificare*
 
 ****
 ### ARPAE
@@ -78,3 +82,40 @@ Questi CSV sono stati creati a partire dai dati della directory DATI PER ALGORIT
 
 **RAVENNA**
 * RAA100
+
+****
+## POZZI CON MENO DI TRE ANNI DI DATI
+
+**N.B.** La misura è indicativa: non sono stati considerati i mezzi periodi
+
+**BOLOGNA**
+
+* SVit7
+
+* TSegno1
+
+* BoPan8
+
+* BOG000
+
+**MODENA**
+
+None
+
+**FERRARA**
+
+None
+
+**FORLICESENA**
+
+* FC0602
+
+**RAVENNA**
+
+* RAA100
+
+**RIMINI**
+
+* PIAN
+
+* CAMP
