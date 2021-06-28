@@ -30,7 +30,7 @@ Questo repository contiene tutti i dati e gli script usati per la realizzazione 
 
 ## TODO
 
-* Controllare script percentile
+* Aggiungere grafici nel mid-layer con unica dashboard
 
 * Aggiornare tabella coord con ON DELETE CASCADE
 

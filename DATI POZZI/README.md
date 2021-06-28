@@ -4,6 +4,9 @@ In questa cartella è possibile trovare la maggior parte dei dati in CSV dei poz
 Alcuni di questi sono stati creati a partire dai dati della directory DATI PER ALGORITMO 
 ## Lista dei pozzi nel DataBase
 ### HERA
+**Dettagli**: Modena e Bologna (Manzolino 4) iniziano dal 2011, Rimini Secchiano dal 2016; fino al 2020; Rimini Pianacci e Campiano disponibili da Novembre 2020 a Giugno 2021;  3 nuove sonde a Bologna da Aprile 2021
+
+
 **BOLOGNA**
 * MAN4                                              
 

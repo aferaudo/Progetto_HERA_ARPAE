@@ -5,6 +5,7 @@ from collections import Counter
 import pyodbc
 import sys
 import numpy as np
+from datetime import date
 
 
 # DB connection for linux server machine
@@ -12,7 +13,7 @@ conn = pyodbc.connect('Driver={/opt/microsoft/msodbcsql17/lib64/libmsodbcsql-17.
                       'Server=localhost;'
                       'Database=Hera;'
                       'UID=SA;'
-                      'PWD=ServerVMHeraDB1*;')
+                      'PWD=disiDatabase!;')
 cursor = conn.cursor()
 
 # 0 = red
@@ -20,23 +21,19 @@ cursor = conn.cursor()
 # 2 = green
 colors_list = ["#ff7f7f", "#FFFF7F", "#7fbf7f"]
 
-query_stato = "SELECT STATO FROM dbo.STATOPOZZI WHERE AMBITO="
+query_stato = "SELECT STATO, COD_POZZO FROM dbo.STATOPOZZI WHERE AMBITO="
 
 query_insert_status = "INSERT INTO dbo.StatoPozzi (cod_pozzo,ambito,stato) VALUES(?,?,?)"
 
-# TODO
-# This map establishes the single pozzo status
-# Map creation should be dynamic:
-# Read data from db and compute the "percentile 75" everything over is green, 
-# values between it and minimum are orange and values under minimum are red! 
 
 # !!! The comparison to verify if level is under a threshold is done on its daily average
-
+# Dynamic map containing for each cod_pozzo its corresponding threshold
 thresholds_map = dict() 
 
 
 
 # ambito map
+# TODO maybe that's still too static
 ambito_map = {
     # "PIACENZA": "PC",
     # "PARMA": "PR",
@@ -49,6 +46,13 @@ ambito_map = {
     "RIMINI": "RN"
 }
 
+def get_query_total_records_per_day(city):
+    query_total_records_per_day="SELECT COD_POZZO, COUNT(*) from (SELECT COD_POZZO, MIN(DATA_ORA) AS time FROM {} GROUP BY COD_POZZO, MONTH(DATA_ORA), DAY(DATA_ORA), YEAR(DATA_ORA)) SRC GROUP BY COD_POZZO".format(city) 
+    return query_total_records_per_day
+
+def get_query_last_year_recording(city):
+    query_last_year_recording = "SELECT COD_POZZO, MAX(YEAR(DATA_ORA)) FROM {} GROUP BY COD_POZZO".format(city)
+    return query_last_year_recording
 
 def get_query_last_year(city):
     query_data_last_year = "SELECT * FROM {} B WHERE B.PORTATA <= 0.3 AND B.DATA_ORA > (SELECT MAX(DATEADD(year,-1,DATA_ORA)) FROM {} WHERE COD_POZZO = B.COD_POZZO) ORDER BY B.COD_POZZO, B.LIVELLO DESC".format(city,city)
@@ -72,22 +76,33 @@ def from_tuple_list_to_dict(tuple_list):
         to_return[t[0]] = t[1]
     return to_return
 
-def color_selection(query_result):
+
+def color_selection(query_result, weights):
+    # TODO add weights (ponderate average)
     """
         This method returns the color of the network
     """
     
     # Amount of returned values
     total_values = len(query_result)
-    
+    total_weights = 0
+
     # Compute percentage
     percentages = Counter() # Empty counter
     for row in query_result:
-        percentages[row[0]] += 1
+        # row[0] = STATO
+        # row[1] = COD_POZZO
+        percentages[row[0]] += weights[row[1]] # * 1
+        total_weights += weights[row[1]]
+
+    if total_weights == 0:
+        return colors_list[2]
     
     # The ratio is computed with the most common element
-    ratio = percentages.most_common(1)[0][1]/total_values
+    ratio = percentages.most_common(1)[0][1]/total_weights
+    # print(ratio)
     if ratio > 0.5:
+        # print(percentages.most_common(1)[0][0])
         return colors_list[percentages.most_common(1)[0][0]]
     else:
         # When the probability is the same or there are too many reds status among them, 
@@ -156,7 +171,31 @@ def compute_pozzo_status(values, last_dates):
         
     return pozzi_status
 
-    
+
+def compute_weight(amount_of_records, last_years):
+    # TODO if an element has less than one/two year of data, it should get weight=0
+    # TODO Add other parameter to compute weights: e.g. how much is important an element
+    """
+        This method returns a dict containing cod_pozzo as key and its weight as value
+        The resulting weights should be used to compute the color of an area.
+
+        Weights computed as ratio between amount of records and max amount of records
+        if last year of data recorded is too low (e.g. 2018) then weight = 0
+    """
+    records_max = max(amount_of_records, key=lambda x:x[1])
+
+    # if last year of data recorded is too low (e.g. 2018) then weight = 0
+    last_years = from_tuple_list_to_dict(last_years)
+    todays_date = date.today()
+
+    weight_dict = dict()
+    for value in amount_of_records:
+        if todays_date.year - last_years[value[0]] <= 1:
+            weight_dict[value[0]] = round(value[1]/records_max[1], 3)
+        else:
+            weight_dict[value[0]] = 0
+
+    return weight_dict
 
 
 def main(argv):
@@ -194,7 +233,6 @@ def main(argv):
         print("Soglie pozzi: {}".format(thresholds_map))
         print("Stato pozzi {}: {}".format(key,pozzi_status))
         print()
-        print()
 
         # Delete old_status
         print("Updating status...")
@@ -208,6 +246,18 @@ def main(argv):
         
         print("Status updated!")
 
+        print("Computing weights...")
+        cursor.execute(get_query_total_records_per_day(city=key))
+        tot_records = cursor.fetchall()
+
+        cursor.execute(get_query_last_year_recording(city=key))
+        last_years = cursor.fetchall()
+        
+        weights = compute_weight(amount_of_records=tot_records, last_years=last_years)
+        print(weights)
+        print("Weights: done.")
+
+        print("Loading new status from db...")
         query = "{}'{}'".format(query_stato, key)
         cursor.execute(query)
         print("Query: {}".format(query))
@@ -218,10 +268,12 @@ def main(argv):
 
         print("Updating map colors...")
 
-        color = color_selection(query_results)
+        color = color_selection(query_results, weights=weights)
         print("Selected color: {}".format(color))
         data['province'][ambito_map[key]] = color
 
+        print()
+        print()
 
     # Writing results on colors.json
     with open(args.path, "w") as f:
