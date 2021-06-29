@@ -19,7 +19,8 @@ cursor = conn.cursor()
 # 0 = red
 # 1 = yellow
 # 2 = green
-colors_list = ["#ff7f7f", "#FFFF7F", "#7fbf7f"]
+# colors_list = ["#ff7f7f", "#FFFF7F", "#7fbf7f"]
+colors_list = ["#fc8d59", "#FFFF7F", "#91cf60"]
 
 query_stato = "SELECT STATO, COD_POZZO FROM dbo.STATOPOZZI WHERE AMBITO="
 

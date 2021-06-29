@@ -3,7 +3,7 @@ N.B. Questo algoritmo dovrà essere chiamato ogni volta che nuovi dati vengono c
 
 L'algoritmo implementato in **status_monitor.py** consente di cambiare il colore di un ambito sulla base dello stato dei pozzi appartenenti a quell'ambito.
 
-Per prima cosa l'algoritmo **calcola lo stato del pozzo**. Il calcolo viene effettuato usando il percentile 25 ordinando i valori in maniera discendente. In particolare: 
+Per prima cosa l'algoritmo **calcola lo stato del pozzo**. Il calcolo viene effettuato usando il percentile 25 ordinando i valori in maniera ascendente(dal minore al maggiore). In particolare: 
 
 * al di sopra del percentile 25 se l'ultimo valore registrato non corrisponde con il minimo di sempre lo stato del pozzo è giallo (1)
 
