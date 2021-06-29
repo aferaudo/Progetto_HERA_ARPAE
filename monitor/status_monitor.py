@@ -271,15 +271,20 @@ def main(argv):
 
         color = color_selection(query_results, weights=weights)
         print("Selected color: {}".format(color))
-        data['province'][ambito_map[key]] = color
-
+    
+        for i in range(len(data['colorList'])):
+            if data['colorList'][i]['name'] == ambito_map[key]:
+                data['colorList'][i]['color'] = color
+        print("Colors updated!")
+        # print(data['colorList'])
         print()
         print()
 
     # Writing results on colors.json
+    print("Writing colors.json ...")
     with open(args.path, "w") as f:
         json.dump(data, f)
-        print("Colors updated!")
+        
     
     
     cursor.close()
