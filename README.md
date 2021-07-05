@@ -38,9 +38,6 @@ Questo repository contiene tutti i dati e gli script usati per la realizzazione 
 
 * Script che automatizza il processo di inserimento dati nel db
 
-* Divisione pozzi per appartenenza: Visualizzazione dei semafori relativi ai pozzi ARPAE ed HERA separata
-
-* Diminuire numero di richieste di geojson files (grafana-map-panel)
 
 ****
 #### Note varie
@@ -48,4 +45,4 @@ Questo repository contiene tutti i dati e gli script usati per la realizzazione 
 
 * Pozzi Campiano e Pianacci di Rimini pochi dati validi (*aggiornati*)
 
-* Script per il calcolo del percentile considera solo i livelli con portata <= 0.3: deve essere chiamato manualmente per ora, in futuro dovrà essere chiamato da chi va ad effettuare l'update settimanale/mensile dei dati, in modo da ottenere il seguente comportamento: *ogni volta che nuovi dati vengono inseriti il percentile cambia e di conseguenza cambia anche la soglia che provoca una modifica dello stato dei singoli pozzi*
+* Script per il calcolo del percentile considera solo i livelli con portata <= 0.3: deve essere chiamato manualmente per ora, in futuro dovrà essere chiamato da chi va ad effettuare l'update settimanale/mensile dei dati, in modo da ottenere il seguente comportamento: *ogni volta che nuovi dati vengono inseriti il percentile cambia e di conseguenza cambia anche la soglia che provoca una modifica dello stato dei singoli pozzi* (EDIT: lo script ora è in grado di calcolare i pesi)

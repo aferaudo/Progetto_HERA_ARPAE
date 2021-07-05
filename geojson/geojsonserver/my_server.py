@@ -17,6 +17,7 @@ class MyHTTPRequestHandler(SimpleHTTPRequestHandler):
         SimpleHTTPRequestHandler.end_headers(self)
 
     def send_my_headers(self):
+        self.send_header("Cache-Control", "max-age=90")
         self.send_header("Access-Control-Allow-Origin", "*")
 
 if __name__ == '__main__':
