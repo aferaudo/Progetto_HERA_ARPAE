@@ -1,1 +1,32 @@
-{"province": {"PC": "#7fbf7f", "PR": "#7fbf7f", "RE": "#ff7f7f", "MO": "#ff7f7f", "BO": "#7fbf7f", "FE": "#FFFF7F", "RA": "#7fbf7f", "FC": "#ff7f7f", "RN": "#ff7f7f"}}
+{"colorList": [
+        {
+            "name": "MO",
+            "color": "#91cf60"
+        },
+        {
+            "name": "BO",
+            "color": "#FFFF7F"
+        },
+        {
+            "name": "RA",
+            "color": "#fc8d59"
+        },
+        {
+            "name": "FC",
+            "color": "#7fbf7f"
+        },
+        {
+            "name": "FE",
+            "color": "#7fbf7f"
+        },
+        {
+            "name": "RN",
+            "color": "#FFFF7F"
+        },
+        {
+            "name": "confinati_sup",
+            "color": "#7fbf7f"
+        }
+
+        ]
+}

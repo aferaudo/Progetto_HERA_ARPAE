@@ -30,7 +30,7 @@ Questo repository contiene tutti i dati e gli script usati per la realizzazione 
 
 ## TODO
 
-* Aggiungere grafici nel mid-layer con unica dashboard
+* Upgrade security of geojson server
 
 * Aggiornare tabella coord con ON DELETE CASCADE
 
