@@ -24,7 +24,7 @@ colors_list = ["#fc8d59", "#FFFF7F", "#91cf60"]
 
 query_stato = "SELECT STATO, COD_POZZO FROM dbo.STATOPOZZI WHERE AMBITO="
 
-query_insert_status = "INSERT INTO dbo.StatoPozzi (cod_pozzo,ambito,stato) VALUES(?,?,?)"
+query_insert_status = "INSERT INTO dbo.StatoPozzi (cod_pozzo,ambito,stato,threshold) VALUES(?,?,?,?)"
 
 
 # !!! The comparison to verify if level is under a threshold is done on its daily average
@@ -242,7 +242,7 @@ def main(argv):
 
         # Insert new status
         for cod_pozzo in pozzi_status.keys():
-            cursor.execute(query_insert_status, cod_pozzo, key, pozzi_status[cod_pozzo])
+            cursor.execute(query_insert_status, cod_pozzo, key, pozzi_status[cod_pozzo], thresholds_map[cod_pozzo])
             cursor.commit()
         
         print("Status updated!")
