@@ -12,16 +12,12 @@ Alcuni di questi sono stati creati a partire dai dati della directory DATI PER A
 
 * MAG2                                              
 
-* MAN7   
-
 * BoPan8
 
 * SVit7
 
 * TSegno1
 
-*TODO*
-*verifica seconda metà del 2018 Manzolino 7*
 
 **MODENA**
 

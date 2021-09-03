@@ -1,6 +1,7 @@
 # Progetto_HERA_ARPAE
 Questo repository contiene tutti i dati e gli script usati per la realizzazione della dashboard.
 
+<img src="Scheme/infrastruttura-1.png" alt="infrastruttura"></img>
 
 ## Dati attualmente nel DB
 ### Dati di contesto
