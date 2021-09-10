@@ -19,8 +19,8 @@ cursor = conn.cursor()
 # 0 = red
 # 1 = yellow
 # 2 = green
-# colors_list = ["#ff7f7f", "#FFFF7F", "#7fbf7f"]
-colors_list = ["#fc8d59", "#FFFF7F", "#91cf60"]
+# 3 = gray // few data
+colors_list = ["#fc8d59", "#FFFF7F", "#91cf60", "#808A9F"]
 
 query_stato = "SELECT STATO, COD_POZZO FROM dbo.STATOPOZZI WHERE AMBITO="
 
@@ -71,6 +71,10 @@ def get_query_delete_old_status(city):
     query_delete_old_status = "DELETE FROM STATOPOZZI WHERE AMBITO='{}'".format(city)
     return query_delete_old_status
 
+def get_query_total_months(city):
+    query_total_months = "SELECT T1.COD_POZZO, COUNT(T1.MESE) FROM ( SELECT COD_POZZO, MONTH(DATA_ORA) AS MESE, YEAR(DATA_ORA) AS ANNO FROM {} GROUP BY COD_POZZO, YEAR(DATA_ORA), MONTH(DATA_ORA)) AS T1 GROUP BY T1.COD_POZZO".format(city)
+    return query_total_months
+
 def from_tuple_list_to_dict(tuple_list):
     to_return = dict()
     for t in tuple_list:
@@ -79,13 +83,12 @@ def from_tuple_list_to_dict(tuple_list):
 
 
 def color_selection(query_result, weights):
-    # TODO add weights (ponderate average)
     """
-        This method returns the color of the network
+        This method returns the color of the entire network
     """
     
     # Amount of returned values
-    total_values = len(query_result)
+    # total_values = len(query_result)
     total_weights = 0
 
     # Compute percentage
@@ -101,22 +104,32 @@ def color_selection(query_result, weights):
     
     # The ratio is computed with the most common element
     ratio = percentages.most_common(1)[0][1]/total_weights
+
+    selected_color = percentages.most_common(1)[0][0]
+    if selected_color == 3:
+        # When gray is the predominant color, the network becomes green
+        # TODO is this right?
+        selected_color = 2
+    
     # print(ratio)
     if ratio > 0.5:
         # print(percentages.most_common(1)[0][0])
-        return colors_list[percentages.most_common(1)[0][0]]
+        return colors_list[selected_color]
     else:
         # When the probability is the same or there are too many reds status among them, 
         # the color is yellow
         return colors_list[1]
     
 
-def compute_pozzo_status(values, last_dates):
+def compute_pozzo_status(values, last_dates, data_months):
+    """
+        This method compute and returns pozzi status
+    """
     # Nel calcolo del percentile deve essere contato anche i dati con portata!=0 ?
     # Il minimo deve essere quello di sempre o quello nei dati selezionati?
-    # Organizzale per codice pozzo
+    
     # pozzi_status = {"cod_pozzo": status}
-    # Possible status values: 0 (red), 1 (yellow), 2 (green)
+    # Possible status values: 0 (red), 1 (yellow), 2 (green), 3 (gray)
     # pozzi = {("cod_pozzo": [registered levels in the year from the last value registered]}
     pozzi = dict()
 
@@ -132,6 +145,13 @@ def compute_pozzo_status(values, last_dates):
             pozzi[row[3]] = list()
         
         pozzi[row[3]].append((row[0],row[1]))
+    
+    # {'cod_pozzo': amount of data in months}
+    total_data = dict()
+    for pozzo in data_months:
+        # pozzo[0] cod_pozzo
+        # pozzo[1] cod_pozzo
+        total_data[pozzo[0]] = pozzo[1]
     
     # Date is the second element of the tuple
     date_index = 0
@@ -161,9 +181,12 @@ def compute_pozzo_status(values, last_dates):
         # 2.1 find the minimum value in the last year (this is used to determine the red status)
         min_value_last_year = np.min(levels)
         
-        print("Pozzo: {}, media ultimo giorno: {}, minimo di sempre: {}".format(cod_pozzo, last_day_mean, min_value_last_year))
+        print("Pozzo: {}, media ultimo giorno: {}, minimo di sempre: {}, mesi totali: {}".format(cod_pozzo, last_day_mean, min_value_last_year, total_data[cod_pozzo]))
         
-        if last_day_mean == min_value_last_year:
+        if total_data[cod_pozzo] < 36:
+            # if we have less than 3 years of data (36 months), the status is gray (=not considered)
+            pozzi_status[cod_pozzo] = 3
+        elif last_day_mean == min_value_last_year:
             pozzi_status[cod_pozzo] = 0
         elif last_day_mean > thresholds_map[cod_pozzo]:
             pozzi_status[cod_pozzo] = 2
@@ -173,8 +196,7 @@ def compute_pozzo_status(values, last_dates):
     return pozzi_status
 
 
-def compute_weight(amount_of_records, last_years):
-    # TODO if an element has less than one/two year of data, it should get weight=0
+def compute_weight(amount_of_records, last_years, data_months):
     # TODO Add other parameter to compute weights: e.g. how much is important an element
     """
         This method returns a dict containing cod_pozzo as key and its weight as value
@@ -182,6 +204,7 @@ def compute_weight(amount_of_records, last_years):
 
         Weights computed as ratio between amount of records and max amount of records
         if last year of data recorded is too low (e.g. 2018) then weight = 0
+        if amount of data less than 3 years of data (36 months) then weight = 0
     """
     records_max = max(amount_of_records, key=lambda x:x[1])
 
@@ -189,9 +212,16 @@ def compute_weight(amount_of_records, last_years):
     last_years = from_tuple_list_to_dict(last_years)
     todays_date = date.today()
 
+    total_data = dict()
+    for pozzo in data_months:
+        # pozzo[0] cod_pozzo
+        # pozzo[1] cod_pozzo
+        total_data[pozzo[0]] = pozzo[1]
+
     weight_dict = dict()
     for value in amount_of_records:
-        if todays_date.year - last_years[value[0]] <= 1:
+        # value[0] cod_pozzo
+        if todays_date.year - last_years[value[0]] <= 1 and total_data[value[0]] >= 36:
             weight_dict[value[0]] = round(value[1]/records_max[1], 3)
         else:
             weight_dict[value[0]] = 0
@@ -208,29 +238,24 @@ def main(argv):
         data = json.load(f)
         print(data)
     
-    
-    # Query for ambiti
-    # cursor.execute(get_query_ambito())
-    # ambiti = cursor.fetchall()
-    # # The dict is used to take the Ambito starting from cod_pozzo
-    # ambiti_dict = dict()
-    # for ambito in ambiti:
-    #     ambiti_dict[ambito[0]] = ambito[1]
-    # print(ambiti_dict)
-
 
     for key in ambito_map.keys():
         
-        # Query for values in the last year
+        # Query to obtain values in the last year
         cursor.execute(get_query_always(key))
         rows = cursor.fetchall()
         if len(rows) == 0:
             continue
-        # Query for to obtain the date of the last value recorded
+
+        # Query to obtain the date of the last value recorded
         cursor.execute(get_query_last_day_date(key))
         dates = cursor.fetchall()
 
-        pozzi_status = compute_pozzo_status(values=rows,last_dates=from_tuple_list_to_dict(dates))
+        # Query to obtain the amount of data months do we have
+        cursor.execute(get_query_total_months(city=key))
+        total_data = cursor.fetchall()
+
+        pozzi_status = compute_pozzo_status(values=rows,last_dates=from_tuple_list_to_dict(dates), data_months=total_data)
         print("Soglie pozzi: {}".format(thresholds_map))
         print("Stato pozzi {}: {}".format(key,pozzi_status))
         print()
@@ -254,7 +279,7 @@ def main(argv):
         cursor.execute(get_query_last_year_recording(city=key))
         last_years = cursor.fetchall()
         
-        weights = compute_weight(amount_of_records=tot_records, last_years=last_years)
+        weights = compute_weight(amount_of_records=tot_records, last_years=last_years, data_months=total_data)
         print(weights)
         print("Weights: done.")
 
@@ -286,15 +311,25 @@ def main(argv):
         json.dump(data, f)
         
     
-    
     cursor.close()
+
+    print("Copying file in docker container {}".format(args.container))
+
+    os.system("sudo docker cp {} {}:/geojsonserver/file_to_serve/".format(args.path, args.container))
+
     print("Done.")
 
 if __name__ == '__main__':
+    if os.geteuid() != 0:
+        exit("You need to have root privileges to run this script.\nPlease try again, this time using 'sudo'. Exiting.")
+    
     parser = argparse.ArgumentParser(description="Monitor RETI Acque HERA Arpae")
 
     parser.add_argument('-p', '--path', metavar='<path>',
-                        help='path of the file "colors.json"', type=str, required=True)
+                        help='path of the file "colors.json" (file must be not empty)', type=str, required=True)
+
+    parser.add_argument('-c', '--container', metavar='<container_id/container_name>',
+                        help='name of the docker container"', type=str, required=True)
 
     args = parser.parse_args()
     
