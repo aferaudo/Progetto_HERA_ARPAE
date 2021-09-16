@@ -1,6 +1,6 @@
 import pandas as pd
 import os
-#import pyodbc
+import pyodbc
 import math
 
 
@@ -27,12 +27,12 @@ querydict = {
 
 work_dir = os.getcwd()
 file_list = os.listdir(work_dir)
-# conn = pyodbc.connect('Driver={/opt/microsoft/msodbcsql17/lib64/libmsodbcsql-17.7.so.2.1};'
-#                       'Server=localhost;'
-#                       'Database=Hera;'
-#                       'UID=SA;'
-#                       'PWD=ServerVMHeraDB1*;')
-# cursor = conn.cursor()
+conn = pyodbc.connect('Driver={/opt/microsoft/msodbcsql17/lib64/libmsodbcsql-17.7.so.2.1};'
+                      'Server=localhost;'
+                      'Database=Hera;'
+                      'UID=SA;'
+                      'PWD=disiDatabase!;')
+cursor = conn.cursor()
 
 for file in file_list:
     if not (file.endswith(".csv") or os.path.getsize(file) == 0):
@@ -44,29 +44,29 @@ for file in file_list:
     # df = pd.read_csv("{}/{}".format(work_dir, file), parse_dates=['DATA_ORA'], dayfirst=True, sep=";")
     
     # Angelo Hera
-    # df = pd.read_csv("{}/{}".format(work_dir, file), parse_dates=['DATA_ORA'], dayfirst=True, sep=";")
+    df = pd.read_csv("{}/{}".format(work_dir, file), parse_dates=['DATA_ORA'], dayfirst=True, sep=";")
     # df[df.COD_POZZO.eq("SECC")].to_csv("test.csv", index=False, sep=";")
     
     # Alberto
-    df = pd.read_csv("{}/{}".format(work_dir, file))
+    # df = pd.read_csv("{}/{}".format(work_dir, file))
     print(df)
     
     # metti livello negativo
 
-    # for i, row in df.iterrows():
-    #     # if df.at[i, "LIVELLO"] > 0:
-    #     #     liv_sonda = sondedict[df.at[i, "COD_POZZO"]]
-    #     #     df.at[i, "LIVELLO"] = df.at[i, "LIVELLO"] - liv_sonda
-    #     data = df.at[i, "DATA_ORA"]
-    #     livello = df.at[i, "LIVELLO"]
-    #     portata = float(df.at[i, "PORTATA"])
-    #     cod_pozzo = df.at[i, "COD_POZZO"]
-    #     if not math.isnan(livello) and not math.isnan(portata):
-    #         cursor.execute(querydict[city], data, livello, portata, cod_pozzo)
-#     conn.commit()     
-#     print("bellali")
+    for i, row in df.iterrows():
+        # if df.at[i, "LIVELLO"] > 0:
+        #     liv_sonda = sondedict[df.at[i, "COD_POZZO"]]
+        #     df.at[i, "LIVELLO"] = df.at[i, "LIVELLO"] - liv_sonda
+        data = df.at[i, "DATA_ORA"]
+        livello = df.at[i, "LIVELLO"]
+        portata = float(df.at[i, "PORTATA"])
+        cod_pozzo = df.at[i, "COD_POZZO"]
+        if not math.isnan(livello) and not math.isnan(portata):
+            cursor.execute(querydict[city], data, livello, portata, cod_pozzo)
+    conn.commit()     
+    print("bellali")
  
-# cursor.close()    
+cursor.close()    
 
 
 

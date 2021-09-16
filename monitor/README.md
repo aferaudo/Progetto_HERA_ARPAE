@@ -15,6 +15,8 @@ Una volta che lo stato del pozzo è stato aggiornato, viene effettuato il **calc
 
 I pesi vengono successivamente utilizzati per **selezionare il colore da attribuire all'ambito**. Per ogni stato (rosso, giallo, verde) viene effettuata la somma dei pesi. Queste somme vengono usate per selezionare lo stato che potrebbe essere attribuito all'intero ambito: ad esempio se esistono 3 pozzi nello stato verde ognuno con peso 0,3, quindi con somma 0,9, e un pozzo lo stato giallo con peso 0,8 lo stato che verrà selezionato sarà lo stato verde. Una volta che un possibile stato è stato selezionato viene calcolato quanto questo pesi sul totale (somma per quello stato/ somma dei pesi). Tornando al caso precedente si ha 0,9 (somma pesi stato verde) / 1,7 (somma totale dei pesi per quell'ambito). Se il valore ottenuto supera 0.5 all'ambito verrà assegnato il colore corrispondente a quello stato(nell'esempio precendente verde), altrimenti il colore assegnato sarà il giallo.
 
+Se i dati disponibili per un pozzo non superano i 36 Mesi di età (3 anni), il pozzo avrà peso zero e stato grigio.
+
 ****
 #### Note varie
 

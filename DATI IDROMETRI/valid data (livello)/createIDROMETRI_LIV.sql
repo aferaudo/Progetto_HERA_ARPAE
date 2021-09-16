@@ -1,0 +1,23 @@
+USE [Hera]
+GO
+
+/****** Object:  Table [dbo].[IDROMETRI_LIV] ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[IDROMETRI_LIV](
+	[data_ora] [datetime] NOT NULL,
+	[livello] [float] NOT NULL,
+    [nome] [nvarchar](70) NOT NULL
+) ON [PRIMARY]
+GO
+
+ALTER TABLE [dbo].[IDROMETRI_LIV]  WITH CHECK ADD  CONSTRAINT [FK_IDROMETRI_LIV_COORD_IDRO] FOREIGN KEY([Nome])
+REFERENCES [dbo].[coord_idro] ([Nome])
+GO
+
+ALTER TABLE [dbo].[IDROMETRI_LIV] CHECK CONSTRAINT [FK_IDROMETRI_LIV_COORD_IDRO]
+GO
