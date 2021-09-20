@@ -7,8 +7,8 @@ import argparse
 
 
 queries = [
-    "query to be defined", # 0 = idrometro
-    "query to be defined" # 1 = pozzo
+    "INSERT INTO dbo.IDROMETRI_LIV (data_ora, livello, nome)(?,?,?)", # 0 = idrometro
+    "(data_ora,livello,portata,cod_pozzo) values(?,?,?,?)" # 1 = pozzo
 ]
 
 
@@ -90,8 +90,12 @@ def main(argv):
         
         for k, row in data.iterrows():
             tag, media, data_ora = get_parameter_from_row(row) # AI = True because here we analise only ai files
-            code = tags[tags["TAG_LIV"]==tag]["DENOMINAZIONE"].array[0] # transform the series in array and then get the first element ([0])
             print(tag)
+            if len(tags[tags["TAG_LIV"]==tag]["DENOMINAZIONE"].array) == 0:
+                continue
+            code = tags[tags["TAG_LIV"]==tag]["DENOMINAZIONE"].array[0] # transform the series in array and then get the first element ([0])
+
+
             # This code could represent a "idrometro" or a "pozzo"
             is_pozzo = tags[tags["TAG_LIV"]==tag]["TYPE"].array[0]
             
@@ -114,14 +118,22 @@ def main(argv):
 
             # 1 is here, 0 is not here -1 does not exist
             if is_portata_here == 1:
-
+                portata_empty = 0
                 for sensor_tag in portata_tag:
                     # It is not possible to apply both filters at the same time
                     value = data[data[AI.index("TAG")] == sensor_tag] # filtering by tag 
                     value = value[value[AI.index("START_TS")] == data_ora] # filtering by time
+                    
+                    # This is used to check if there exist a corresponding portata value.
+                    # If it does not exist the data will not be inserted
+                    if value.empty:
+                        portata_empty += 1
 
                     # here we can have multiple portata data, so we should sum it
                     portata += value[AI.index("MEAN")].array[0]
+                
+                if portata_empty == len(portata_tag):
+                    portata = -1
 
             elif is_portata_here == 0:
                 portata_tag = portata_tag[0] # For new sensor there exist only one tag
@@ -131,13 +143,17 @@ def main(argv):
                 
                 portata_data = portata_data[portata_data[DI.index("TAG")]==portata_tag] # filtering by tag 
                 portata_data = portata_data[portata_data[DI.index("START_TS")]==data_ora] # filtering by time
-                portata = portata_data[DI.index("TIME1")].array[0]
+                if not portata_data.empty:
+                    portata = portata_data[DI.index("TIME1")].array[0]
+                else:
+                    portata = -1
                 
 
             else:
                 print("No portata defined")
                 continue
                 
+            portata = round(portata, 2)
             # Insert in db
             if piano_campagna > 0:
                 real_level_value = round(media - piano_campagna,2)
