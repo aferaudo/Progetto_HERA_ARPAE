@@ -27,7 +27,7 @@ for k, file_name in enumerate(file_list):
     for i, row in idrometro.iterrows():
         #print(row)
         data_ora = idrometro.at[i,'DATA_ORA']
-        livello = row['MEDIA']
+        livello = 8.8 + row['MEDIA']
         nome = 'FIUME PO' # Da cambiare
         # print("{}\t{}\t{}\t".format(nome,data_ora, livello))
         cursor.execute(query, data_ora, livello, nome)

@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 import argparse
 
@@ -61,9 +61,9 @@ def main(argv):
 
     work_dir = argv.path
     file_list = os.listdir(work_dir)
-    tags = pd.read_excel('pozzi_tags/Tag Pozzi con Sonde_per TLC.xlsx') # File useful for tag match
-
-    now = datetime.now() # This is used to understande which file should be deleted
+    tags = pd.read_excel('pozzi_tags/Tag Pozzi con Sonde_per TLC_1.xlsx') # File useful for tag match
+    subset_file_list = [name for name in file_list if "DI" in name]
+    now = datetime.now() # This is used to understand which file should be deleted
 
     for file_name in file_list:
 
@@ -79,7 +79,7 @@ def main(argv):
         
         # These files will be read only for some kind of sensors
         if "DI" in file_name:
-            print("File {} found, this will be analysed later".format(file_name))
+            print("File {} found, already opened".format(file_name))
             continue
 
         # TODO Only today's files should be analysed
@@ -88,9 +88,12 @@ def main(argv):
 
         data = pd.read_csv("{}/{}".format(work_dir, file_name), sep=";", header=None, index_col=False, parse_dates=[2])
         
+        # Efficient implementation
+        # portata_data = pd.read_csv("{}/RWDI{}.csv".format(work_dir, date_string), sep=";", header=None, index_col=False, parse_dates=[2])
+
         for k, row in data.iterrows():
             tag, media, data_ora = get_parameter_from_row(row) # AI = True because here we analise only ai files
-            print(tag)
+            
             if len(tags[tags["TAG_LIV"]==tag]["DENOMINAZIONE"].array) == 0:
                 continue
             code = tags[tags["TAG_LIV"]==tag]["DENOMINAZIONE"].array[0] # transform the series in array and then get the first element ([0])
@@ -138,15 +141,19 @@ def main(argv):
             elif is_portata_here == 0:
                 portata_tag = portata_tag[0] # For new sensor there exist only one tag
                 
-                # here we need to read portata value in another file
-                portata_data = pd.read_csv("{}/RWDI{}.csv".format(work_dir, date_string), sep=";", header=None, index_col=False, parse_dates=[2])
-                
-                portata_data = portata_data[portata_data[DI.index("TAG")]==portata_tag] # filtering by tag 
-                portata_data = portata_data[portata_data[DI.index("START_TS")]==data_ora] # filtering by time
-                if not portata_data.empty:
-                    portata = portata_data[DI.index("TIME1")].array[0]
-                else:
-                    portata = -1
+                # Use portata_data read from DI file
+                for file_name_portata in subset_file_list:
+                    portata_data = pd.read_csv("{}/{}".format(work_dir, file_name_portata), sep=";", header=None, index_col=False, parse_dates=[2])
+
+
+                    portata_data_filtered = portata_data[portata_data[DI.index("TAG")]==portata_tag] # filtering by tag 
+                    portata_data_filtered = portata_data_filtered[portata_data_filtered[DI.index("START_TS")]==data_ora] # filtering by time
+                    if portata_data_filtered.empty:
+                       continue
+                    print("portata of {}, {} found in {}, while source file is {}".format(code, data_ora, file_name_portata, file_name))
+                    portata = portata_data_filtered[DI.index("TIME1")].array[0]
+
+                        
                 
 
             else:
@@ -163,7 +170,7 @@ def main(argv):
                 else:
                     real_level_value = round(-media,2)
                 
-            logging.info("Pozzo: %s", "COD POZZO: {}, TAG: {}, MEDIA: {}, PIANO CAMPAGNA: {}, PORTATA: {}, REAL LEVEL VALUE: {}".format(code, tag, media, piano_campagna, portata, real_level_value))
+            logging.info("Pozzo: %s", "DATA ORD: {}, COD POZZO: {}, TAG: {}, MEDIA: {}, PIANO CAMPAGNA: {}, PORTATA: {}, REAL LEVEL VALUE: {}".format(data_ora, code, tag, media, piano_campagna, portata, real_level_value))
 
             # break
 
@@ -187,9 +194,6 @@ if __name__ == '__main__':
     # TODO to define parameter
     parser.add_argument('-p', '--path', metavar='<path>',
                         help='working dir (where all Hera files are collected)', type=str, required=True)
-
-    parser.add_argument('-c', '--container', metavar='<container_id/container_name>',
-                        help='name of the docker container"', type=str, required=False)
 
     args = parser.parse_args()
     

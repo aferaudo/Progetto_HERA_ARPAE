@@ -12,13 +12,13 @@ def computeAverageInCartesianCoord(list_lat, list_lon):
 		sum_lon = sum_lon + list_lon[i]
 	
 	return sum_lat/len(list_lat), sum_lon/len(list_lat)
-
+	
 
 conn = pyodbc.connect('Driver={/opt/microsoft/msodbcsql17/lib64/libmsodbcsql-17.7.so.2.1};'
                       'Server=localhost;'
                       'Database=Hera;'
                       'UID=SA;'
-                      'PWD=ServerVMHeraDB1*;')
+                      'PWD=disiDatabase!;')
 cursor = conn.cursor()
 
 query = "INSERT INTO dbo.coord_pluv (cod_pluv,lat,long) values(?,?,?)"

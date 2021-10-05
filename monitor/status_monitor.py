@@ -186,7 +186,7 @@ def compute_pozzo_status(values, last_dates, data_months):
         if total_data[cod_pozzo] < 36:
             # if we have less than 3 years of data (36 months), the status is gray (=not considered)
             pozzi_status[cod_pozzo] = 3
-        elif last_day_mean == min_value_last_year:
+        elif last_day_mean <= min_value_last_year:
             pozzi_status[cod_pozzo] = 0
         elif last_day_mean > thresholds_map[cod_pozzo]:
             pozzi_status[cod_pozzo] = 2

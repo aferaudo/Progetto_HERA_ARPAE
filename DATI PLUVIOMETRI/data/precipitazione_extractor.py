@@ -12,7 +12,7 @@ conn = pyodbc.connect('Driver={/opt/microsoft/msodbcsql17/lib64/libmsodbcsql-17.
                       'Server=localhost;'
                       'Database=Hera;'
                       'UID=SA;'
-                      'PWD=ServerVMHeraDB1*;')
+                      'PWD=disiDatabase!;')
 cursor = conn.cursor()
 
 query = "INSERT INTO dbo.PLUVIOMETRI (data_ora, Precipitazione, nome) values(?,?,?)"
