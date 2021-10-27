@@ -1,6 +1,7 @@
 import pandas as pd
 import logging
 from datetime import datetime
+import numpy as np
 
 AI = ["TAG_TYPE", "INTERVAL", "START_TS", "TAG", "DESCRIZIONE TAG", "START_VALUE", "MINIMUM", "MAXIMUM", "MEAN", "LAST_VALUE"]
 DI = ["TAG_TYPE", "INTERVAL", "START_TS", "TAG", "DESCRIZIONE TAG", "START_VALUE", "STATE_CHANGE", "TIME1", "LAST_VALUE"]
@@ -9,6 +10,9 @@ DI = ["TAG_TYPE", "INTERVAL", "START_TS", "TAG", "DESCRIZIONE TAG", "START_VALUE
 # Logging configuration
 FORMAT = '%(levelname)s:%(asctime)-15s %(message)s'
 logging.basicConfig(filename='automatism_hera.log', format=FORMAT, level=logging.DEBUG)
+
+# TODO file marking:
+# Read insert and mark
 
 class ParserHera:
 
@@ -25,6 +29,23 @@ class ParserHera:
         self.tags = tags
         self.file_level_list = file_level_list
         self.file_portata_list = file_portata_list
+        
+        # Read only once files containing digital portata data
+        logging.debug("Loading portata files...")
+        self.df_portata_list = []
+        self._initialize_portata_dfs()
+        logging.debug("Done")
+    
+    def _initialize_portata_dfs(self):
+        """
+        It initializes the list of pandas dataframes containing the digital portata data
+        """
+        for file_name_portata in self.file_portata_list:
+            portata_data = pd.read_csv("{}".format(file_name_portata), sep=";", header=None, index_col=False, parse_dates=[2])
+            # portata_data = pd.read_csv("{}".format(file_name_portata), sep=";", header=None, index_col=False)
+            self.df_portata_list.append(portata_data)
+        
+        return self.df_portata_list
     
     def _get_parameter_from_row(self, row, ai=True):
         # AI                            DI
@@ -57,18 +78,24 @@ class ParserHera:
 
         return cod_pozzo, ambito, is_pozzo, piano_campagna
 
-    def _process_portata(self, portata_tag, data_level, data_ora, infile=1):
+    def _process_portata(self, portata_tag, data_level, data_ora, infile=1, source_file=None):
+        """
+        portata_tag: tag sensor
+        data_level: dataframe containing level and portata_value values (useful when infile==1)
+        data_ora: datetime of that rows
+        infile: allows to understand where to serach the portata
+        source_file: optional parameter used for logging purpose (typically it represents the name of the data_level file)
+        Return portata
+        """
         # Simple case, get the portata and then insert in in the db
         portata_empty = 0
-        portata = -1
-        if infile==1:
+        portata = 0
+        if infile == 1:
+            # AI file
             for sensor_tag in portata_tag:
                 # It is not possible to apply both filters at the same time
                 value = data_level[data_level[AI.index("TAG")] == sensor_tag] # filtering by tag 
                 value = value[value[AI.index("START_TS")] == data_ora] # filtering by time
-                
-                # keeping track of the portata index to delete
-                # index_portata = value.index.values.astype(int)[0]
 
                 # This is used to check if there exist a corresponding portata value.
                 # If it does not exist the data will not be inserted
@@ -81,29 +108,37 @@ class ParserHera:
             if portata_empty == len(portata_tag):
                 portata = -1
         else:
+            # DI file
             portata_tag = portata_tag[0] # For new sensor there exist only one tag
                 
-                # Least efficient solution: in this case we look in each file to find a valid row (valid row = right tag and data_ora)
-            for file_name_portata in self.file_portata_list:
-                portata_data = pd.read_csv("{}".format(file_name_portata), sep=";", header=None, index_col=False, parse_dates=[2])
-
-
+            i = 0 # This index is used to get the file name (useful for logging procedure)
+            
+            portata = -1
+            # More efficient solution: files are already loaded in memory. 
+            # This allows to analyse directly the dataframe without reading each time the file
+            for portata_data in self.df_portata_list:
+                
                 portata_data_filtered = portata_data[portata_data[DI.index("TAG")]==portata_tag] # filtering by tag 
                 portata_data_filtered = portata_data_filtered[portata_data_filtered[DI.index("START_TS")]==data_ora] # filtering by time
                 if portata_data_filtered.empty:
+                    i += 1  
                     continue
+                
+                if not source_file is None:
+                    # Used for debugging
+                    date_level = datetime.strptime(source_file[4:18], "%Y%m%d%H%M%S")
+                    date_portata = datetime.strptime(self.file_portata_list[i][4:18], "%Y%m%d%H%M%S")
+                    
 
+                    if date_level.weekday() != date_portata.weekday():
+                        print("Portata source file {}; Level source file {}; datetime row {}".format(self.file_portata_list[i], source_file, data_ora))
+                i += 1 
 
-                # Debug
-                # print("portata of {}, {} found in {}, while source file is {}".format(code, data_ora, file_name_portata, file_name))
+                # portata ready
                 portata = portata_data_filtered[DI.index("TIME1")].array[0]
                 
-                # Deleting data from csv
-                # if delete_opt:
-                #     portata_data = portata_data.drop(portata_data_filtered.index.values.astype(int)[0], axis=0)
-                #     portata_data.to_csv("{}/{}".format(work_dir, file_name_portata), index=False, header=None,  sep=";")
-
         return round(portata, 3)
+
 
     def _get_real_level(self, piano_campagna, value, is_pozzo):
         if is_pozzo == 1:
@@ -115,13 +150,13 @@ class ParserHera:
                 else:
                     real_level_value = round(-value,3)
         else:
-            real_level_value = piano_campagna + value
+            real_level_value = round((piano_campagna + value), 3)
         
         return real_level_value
 
     def parse(self):
         """
-        This method returns two pandas dfs containing the data
+        This method returns two pandas dataframes containing the data
         to be inserted in the relational db.
         - first df: "DATA_ORA" "LIVELLO" "PORTATA" "COD_POZZO" "AMBITO"
         - second df (idro_level): "DATA_ORA" "LIVELLO" "NOME"
@@ -132,12 +167,29 @@ class ParserHera:
             
             # Extracting dataframe
             data_level = pd.read_csv("{}".format(file_name_level), sep=";", header=None, index_col=False, parse_dates=[2])
+            # data_level = pd.read_csv("{}".format(file_name_level), sep=";", header=None, index_col=False)
+
+            # Initializing markers: markers[dim_df_level_data] = 0
+            # Line processed marker = 1
+            # Line not processed marker = 0
+            if len(data_level.columns) <= 10:
+                # No markers found
+                markers = np.zeros(len(data_level), int) 
+                # print(markers)
+            else:
+                # Load markers
+                markers = data_level[10].array
 
             # Rows iterations
             for k, row in data_level.iterrows():
+                
+                # If already analysed row skipping:
+                if markers[k] == 1:
+                    continue
+
                 tag, media, data_ora = self._get_parameter_from_row(row) # AI = True because here we analise only ai files
                 
-                # If TAG not in the list
+                # If TAG not in the list of level tags
                 if len(self.tags[self.tags["TAG_LIV"]==tag]["DENOMINAZIONE"].array) == 0:
                     continue
                 
@@ -146,23 +198,24 @@ class ParserHera:
                 # This code could represent a "idrometro" or a "pozzo"
                 if is_pozzo == 0:
                     # Case "idrometro" 
-                    
-                    real_idro_value = self._get_real_level(piano_campagna,media,is_pozzo)
+                    real_idro_value = self._get_real_level(piano_campagna, media, is_pozzo)
 
                     logging.info("Idrometro: %s", "DATA_ORA: {}, NOME: {}, LIVELLO {}".format(data_ora, cod_pozzo, real_idro_value))
                     self._df_builder_idro["data_ora"].append(data_ora)
                     self._df_builder_idro["nome"].append(cod_pozzo)
                     self._df_builder_idro["livello"].append(real_idro_value)
+
                     continue
                 
 
                 # Is portata in file?
                 is_portata_here = self.tags[self.tags["TAG_LIV"]==tag]["INFILE"].array[0]
 
-                # Get portata tag
-                portata_tag = self.tags[self.tags["TAG_LIV"]==tag]["TAG_PORTATA"].array
-
-                portata = self._process_portata(portata_tag=portata_tag, data_level=data_level, data_ora=data_ora, infile=is_portata_here)
+                # Get portata tags
+                portata_tags = self.tags[self.tags["TAG_LIV"]==tag]["TAG_PORTATA"]
+                
+                # Getting portata
+                portata = self._process_portata(portata_tag=portata_tags.array, data_level=data_level, data_ora=data_ora, infile=is_portata_here)
                 
                 real_value = self._get_real_level(piano_campagna, media, is_pozzo)
                 logging.info("Pozzo: %s", "DATA ORA: {}, COD POZZO: {}, TAG: {}, MEDIA: {}, PIANO CAMPAGNA: {}, PORTATA: {}, REAL LEVEL VALUE: {}".format(data_ora, cod_pozzo, tag, media, piano_campagna, portata, real_value))
@@ -176,9 +229,23 @@ class ParserHera:
                 self._df_builder["portata"].append(portata)
                 self._df_builder["cod_pozzo"].append(cod_pozzo)
                 self._df_builder["ambito"].append(ambito)
+
+                # Line processed correctly: marked
+                markers[k] = 1
+                
+
+
+            # print(marker)
+            # print(data_level)
+            data_level[10] = markers.tolist()
+            data_level.to_csv("../test/example_{}".format(file_name_level), date_format='%Y%m%d%H%M%S', index=False, header=None,  sep=";")
+            # data_level.to_csv("../test/example_{}".format(file_name_level), index=False, header=None,  sep=";")
+            
         
         def_df_pozzi = pd.DataFrame(data=self._df_builder)
         def_df_idro = pd.DataFrame(data=self._df_builder_idro)
+        
+
         return def_df_pozzi, def_df_idro
 
                 
