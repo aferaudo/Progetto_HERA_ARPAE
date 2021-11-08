@@ -38,8 +38,8 @@ class DbManager:
             portata = float(row["portata"])
             cod_pozzo = row["cod_pozzo"]
             ambito = row["ambito"]
-            cursor.execute(querydict[ambito], data, livello, portata, cod_pozzo)
-
+            self.cursor.execute(querydict[ambito], data, livello, portata, cod_pozzo)
+        self.conn.commit()
 
     def insert_idro_level(self, dataframe_idro):
         """Insert Hera data into mssql db
@@ -50,7 +50,8 @@ class DbManager:
             data = row["data_ora"]
             livello = float(row["livello"])
             nome = row["nome"]
-            cursor.execute(querydict["IDROMETRO_LIV"], data, livello, nome)
+            self.cursor.execute(querydict["IDROMETRO_LIV"], data, livello, nome)
+        self.conn.commit()
 
     # TODO 
     def insert_pluv(self, dataframe_pluv):
