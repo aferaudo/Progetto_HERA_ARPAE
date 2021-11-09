@@ -18,7 +18,7 @@ def destroy_hera(file_list, days_ai, days_di):
             continue
         date_file = datetime.strptime(file_name[4:18], "%Y%m%d%H%M%S")
         day_difference = now - date_file
-        print(day_difference)
+        
         if (day_difference.days > days_ai 
         and "AI" in file_name) or (day_difference.days > days_di 
         and "DI" in file_name):

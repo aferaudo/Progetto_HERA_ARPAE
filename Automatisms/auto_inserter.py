@@ -28,7 +28,10 @@ def main(argv):
     file_list.sort()
     
     subset_file_list_level = [name for name in file_list if "AI" in name]
-    subset_file_list_portata = [name for name in file_list if "DI" in name]
+    subset_file_list_portata = []
+    if argv.enable_digital:
+        subset_file_list_portata = [name for name in file_list if "DI" in name]
+
     
     start = timeit.default_timer()
 
@@ -73,14 +76,21 @@ if __name__ == '__main__':
                         action="store_const", dest="log_level", const=logging.DEBUG,
                         default=logging.INFO)
     
+    parser.add_argument('-e', '--enable_digital',
+                        help="Enable parsing digital files",
+                        action='store_true', required=False, default=False)
+    
     parser.add_argument('-d', '--delete',
-                        help='enabling parse and delete', action='store_true', required=False, default=False)
+                        help='enabling parse and delete', 
+                        action='store_true', required=False, default=False)
     
     parser.add_argument('-dAI', '--daysAI', metavar='<num_days>',
-                        help='days threshold for AI files default value 4', type=int, action=destroyer.DeleteAction, required=False, default=4)
+                        help='days threshold for AI files default value 4', 
+                        type=int, action=destroyer.DeleteAction, required=False, default=4)
+    
     parser.add_argument('-dDI', '--daysDI', metavar='<num_days>',
-                        help='days threshold for DI files default value 6', type=int, action=destroyer.DeleteAction, required=False, default=6)
-
+                        help='days threshold for DI files default value 6', 
+                        type=int, action=destroyer.DeleteAction, required=False, default=6)
 
     args = parser.parse_args()
     

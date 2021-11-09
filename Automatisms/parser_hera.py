@@ -4,9 +4,11 @@ from datetime import datetime
 import numpy as np
 from informal_parser_interface import InformalParserInterface
 
-AI = ["TAG_TYPE", "INTERVAL", "START_TS", "TAG", "DESCRIZIONE TAG", "START_VALUE", "MINIMUM", "MAXIMUM", "MEAN", "LAST_VALUE"]
-DI = ["TAG_TYPE", "INTERVAL", "START_TS", "TAG", "DESCRIZIONE TAG", "START_VALUE", "STATE_CHANGE", "TIME1", "LAST_VALUE"]
+AI_TAGS = ["TAG_TYPE", "INTERVAL", "START_TS", "TAG", "DESCRIZIONE TAG", "START_VALUE", "MINIMUM", "MAXIMUM", "MEAN", "LAST_VALUE"]
+DI_TAGS = ["TAG_TYPE", "INTERVAL", "START_TS", "TAG", "DESCRIZIONE TAG", "START_VALUE", "STATE_CHANGE", "TIME1", "LAST_VALUE"]
 
+def rotate(list_to_rotate, index):
+    return list_to_rotate[index:] + list_to_rotate[:index]
 
 class ParserHera(InformalParserInterface):
 
@@ -24,6 +26,12 @@ class ParserHera(InformalParserInterface):
         self.file_level_list = file_level_list
         self.file_portata_list = file_portata_list
         
+        # Read only once files containing level data
+        logging.info("Loading portata files...")
+        self.df_level_list = []
+        self._initialize_level_dfs()
+        logging.info("Done")
+
         # Read only once files containing digital portata data
         logging.info("Loading portata files...")
         self.df_portata_list = []
@@ -35,10 +43,21 @@ class ParserHera(InformalParserInterface):
         It initializes the list of pandas dataframes containing the digital portata data
         """
         for file_name_portata in self.file_portata_list:
+            if not file_name_portata.endswith('.csv'):
+                continue
             portata_data = pd.read_csv("{}".format(file_name_portata), sep=";", header=None, index_col=False, parse_dates=[2])
             self.df_portata_list.append(portata_data)
+    
+    def _initialize_level_dfs(self):
+        """
+        It initializes the list of pandas dataframes containing level data
+        """
+        for file_name_level in self.file_level_list:
+            if not file_name_level.endswith('.csv'):
+                continue
+            level_data = pd.read_csv("{}".format(file_name_level), sep=";", header=None, index_col=False, parse_dates=[2])
+            self.df_level_list.append(level_data)
         
-        return self.df_portata_list
     
     def _get_parameter_from_row(self, row, ai=True):
         # AI                            DI
@@ -55,12 +74,12 @@ class ParserHera(InformalParserInterface):
         # LAST_VALUE        9
 
     
-        data_ora = row[AI.index("START_TS")]
-        tag = row[AI.index("TAG")]
+        data_ora = row[AI_TAGS.index("START_TS")]
+        tag = row[AI_TAGS.index("TAG")]
         if ai:
-            media = row[AI.index("MEAN")]
+            media = row[AI_TAGS.index("MEAN")]
         else:
-            media = row[DI.index("MEAN")]
+            media = row[DI_TAGS.index("MEAN")]
         return tag, media, data_ora
 
     def _get_base_info_tags(self, tag_liv):
@@ -71,6 +90,37 @@ class ParserHera(InformalParserInterface):
 
         return cod_pozzo, ambito, is_pozzo, piano_campagna
 
+    def _loop_file_search(self, dfs, data_ora, portata_tag, AI=True):
+        # print("Do something!")
+        for data in dfs:
+            # print(data)
+            portata = 0
+            portata_empty = 0
+            for sensor_tag in portata_tag:
+                # Same index for AI and DI    
+                value = data[data[AI_TAGS.index("TAG")]==sensor_tag] # filtering by tag 
+                value = value[value[AI_TAGS.index("START_TS")]==data_ora] # filtering by time
+
+                if value.empty:
+                    portata_empty += 1
+                    continue
+
+                if AI:
+                    # we can have multiple portata data, so we should sum it
+                    portata += value[AI_TAGS.index("MEAN")].array[0]
+                else:
+                    portata += value[DI_TAGS.index("TIME1")].array[0]
+
+            if portata_empty != len(portata_tag):
+                # If I'm here it means that I found 
+                # portata ready
+                break
+            else:
+                # Portata not found
+                portata = -1
+            
+        return portata
+                 
     def _process_portata(self, portata_tag, data_level, data_ora, infile=1, source_file=None):
         """
         portata_tag: tag sensor
@@ -87,19 +137,21 @@ class ParserHera(InformalParserInterface):
             # AI file
             for sensor_tag in portata_tag:
                 # It is not possible to apply both filters at the same time
-                value = data_level[data_level[AI.index("TAG")] == sensor_tag] # filtering by tag 
-                value = value[value[AI.index("START_TS")] == data_ora] # filtering by time
+                value = data_level[data_level[AI_TAGS.index("TAG")] == sensor_tag] # filtering by tag 
+                value = value[value[AI_TAGS.index("START_TS")] == data_ora] # filtering by time
 
                 # This is used to check if there exist a corresponding portata value.
                 # If it does not exist the data will not be inserted
                 if value.empty:
                     portata_empty += 1
+                    continue
 
                 # here we can have multiple portata data, so we should sum it
-                portata += value[AI.index("MEAN")].array[0]
+                portata += value[AI_TAGS.index("MEAN")].array[0]
             
             if portata_empty == len(portata_tag):
                 portata = -1
+                # check in other files
         else:
             # DI file
             portata_tag = portata_tag[0] # For new sensor there exist only one tag
@@ -111,8 +163,8 @@ class ParserHera(InformalParserInterface):
             # This allows to analyse directly the dataframe without reading each time the file
             for portata_data in self.df_portata_list:
                 
-                portata_data_filtered = portata_data[portata_data[DI.index("TAG")]==portata_tag] # filtering by tag 
-                portata_data_filtered = portata_data_filtered[portata_data_filtered[DI.index("START_TS")]==data_ora] # filtering by time
+                portata_data_filtered = portata_data[portata_data[DI_TAGS.index("TAG")]==portata_tag] # filtering by tag 
+                portata_data_filtered = portata_data_filtered[portata_data_filtered[DI_TAGS.index("START_TS")]==data_ora] # filtering by time
                 if portata_data_filtered.empty:
                     i += 1  
                     continue
@@ -121,14 +173,13 @@ class ParserHera(InformalParserInterface):
                     # Used for debugging
                     date_level = datetime.strptime(source_file[4:18], "%Y%m%d%H%M%S")
                     date_portata = datetime.strptime(self.file_portata_list[i][4:18], "%Y%m%d%H%M%S")
-                    
 
                     if date_level.weekday() != date_portata.weekday():
-                        print("Portata source file {}; Level source file {}; datetime row {}".format(self.file_portata_list[i], source_file, data_ora))
+                        logging.debug("%s", "Portata source file {}; Level source file {}; datetime row {}".format(self.file_portata_list[i], source_file, data_ora))
                 i += 1 
 
                 # portata ready
-                portata = portata_data_filtered[DI.index("TIME1")].array[0]
+                portata = portata_data_filtered[DI_TAGS.index("TIME1")].array[0]
                 
         return round(portata, 3)
 
@@ -154,15 +205,10 @@ class ParserHera(InformalParserInterface):
         - second df (idro_level): "DATA_ORA" "LIVELLO" "NOME"
         """
         counter = len(self.file_level_list)-1
-        for file_name_level in self.file_level_list:
-            if not file_name_level.endswith('.csv'):
-                continue
+        for index, data_level in enumerate(self.df_level_list):
             
-            logging.info("Analysing %s", "file name: {} {} files left...".format(file_name_level, counter))
+            logging.info("Analysing %s", "file name: {} {} files left...".format(self.file_level_list[index], counter))
             counter -= 1
-            
-            # Extracting dataframe
-            data_level = pd.read_csv("{}".format(file_name_level), sep=";", header=None, index_col=False, parse_dates=[2])
 
             # Initializing markers: markers[dim_df_level_data] = 0
             # Line processed marker = 1
@@ -175,6 +221,7 @@ class ParserHera(InformalParserInterface):
                 markers = data_level[10].array
 
             line_counter = 0
+
             # Rows iterations
             for k, row in data_level.iterrows():
                 
@@ -212,10 +259,14 @@ class ParserHera(InformalParserInterface):
                 portata_tags = self.tags[self.tags["TAG_LIV"]==tag]["TAG_PORTATA"]
                 
                 # Getting portata
-                portata = self._process_portata(portata_tag=portata_tags.array, data_level=data_level, data_ora=data_ora, infile=is_portata_here)
-                
+                # portata = self._process_portata(portata_tag=portata_tags.array, data_level=data_level, data_ora=data_ora, infile=is_portata_here)
+                if is_portata_here:
+                    portata = self._loop_file_search(dfs=rotate(self.df_level_list, index), data_ora=data_ora, portata_tag=portata_tags.array)
+                else:
+                    portata = self._loop_file_search(dfs=self.df_portata_list, data_ora=data_ora, portata_tag=portata_tags.array, AI=False)
+
                 real_value = self._get_real_level(piano_campagna, media, is_pozzo)
-                logging.debug("Pozzo: %s", "DATA ORA: {}, COD POZZO: {}, TAG: {}, MEDIA: {}, PIANO CAMPAGNA: {}, PORTATA: {}, REAL LEVEL VALUE: {}".format(data_ora, cod_pozzo, tag, media, piano_campagna, portata, real_value))
+                logging.debug("Pozzo: %s", "DATA ORA: {}, COD POZZO: {}, TAG: {}, MEDIA: {}, PIANO CAMPAGNA: {}, PORTATA: {}, REAL LEVEL VALUE: {}, FILE LIVELLO: {}".format(data_ora, cod_pozzo, tag, media, piano_campagna, portata, real_value, self.file_level_list[index]))
 
                 if portata == -1:
                     logging.debug("Not found a portata value for tag: {} data_ora: {} , skip...".format(tag, data_ora))
@@ -230,9 +281,9 @@ class ParserHera(InformalParserInterface):
                 # Line processed correctly: marked
                 markers[k] = 1
                 
-            logging.debug("Processed Line %s", "in {}: {}".format(file_name_level, line_counter))
+            logging.debug("Processed Line %s", "in {}: {}".format(self.file_level_list[index], line_counter))
             data_level[10] = markers
-            data_level.to_csv("{}".format(file_name_level), date_format='%Y%m%d%H%M%S', index=False, header=None,  sep=";")            
+            data_level.to_csv("{}".format(self.file_level_list[index]), date_format='%Y%m%d%H%M%S', index=False, header=None,  sep=";")            
         
         def_df_pozzi = pd.DataFrame(data=self._df_builder)
         def_df_idro = pd.DataFrame(data=self._df_builder_idro)
