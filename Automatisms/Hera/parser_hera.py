@@ -58,7 +58,6 @@ class ParserHera(InformalParserInterface):
             level_data = pd.read_csv("{}".format(file_name_level), sep=";", header=None, index_col=False, parse_dates=[2])
             self.df_level_list.append(level_data)
         
-    
     def _get_parameter_from_row(self, row, ai=True):
         # AI                            DI
 
@@ -91,6 +90,15 @@ class ParserHera(InformalParserInterface):
         return cod_pozzo, ambito, is_pozzo, piano_campagna
 
     def _loop_file_search(self, dfs, data_ora, portata_tag, AI=True):
+        """
+        This method loops in a list of data frames (generated from many csv files) to find the right value of portata.
+        The loop continues until the data is found.
+        dfs: dataframe list to be processed
+        data_ora: datetime of that rows
+        portata_tag: list of portata tags
+        AI: boolean that allows to select the correct column
+        Return portata
+        """
         # print("Do something!")
         for data in dfs:
             # print(data)
@@ -120,7 +128,19 @@ class ParserHera(InformalParserInterface):
                 portata = -1
             
         return portata
-                 
+
+    def _add_builder_level(self, cod_pozzo, data_ora, livello, portata, ambito):
+        self._df_builder["data_ora"].append(data_ora)
+        self._df_builder["livello"].append(livello)
+        self._df_builder["portata"].append(portata)
+        self._df_builder["cod_pozzo"].append(cod_pozzo)
+        self._df_builder["ambito"].append(ambito)
+
+    def _add_builder_idro(self, nome, data_ora, livello):
+        self._df_builder_idro["data_ora"].append(data_ora)
+        self._df_builder_idro["nome"].append(nome)
+        self._df_builder_idro["livello"].append(livello)
+
     def _process_portata(self, portata_tag, data_level, data_ora, infile=1, source_file=None):
         """
         portata_tag: tag sensor
@@ -245,9 +265,7 @@ class ParserHera(InformalParserInterface):
                     real_idro_value = self._get_real_level(piano_campagna, media, is_pozzo)
 
                     logging.debug("Idrometro: %s", "DATA_ORA: {}, NOME: {}, LIVELLO {}".format(data_ora, cod_pozzo, real_idro_value))
-                    self._df_builder_idro["data_ora"].append(data_ora)
-                    self._df_builder_idro["nome"].append(cod_pozzo)
-                    self._df_builder_idro["livello"].append(real_idro_value)
+                    self._add_builder_idro(nome=cod_pozzo, data_ora=data_ora, livello=real_idro_value)
                     markers[k] = 1
                     continue
                 
@@ -259,7 +277,10 @@ class ParserHera(InformalParserInterface):
                 portata_tags = self.tags[self.tags["TAG_LIV"]==tag]["TAG_PORTATA"]
                 
                 # Getting portata
+                # Old method
                 # portata = self._process_portata(portata_tag=portata_tags.array, data_level=data_level, data_ora=data_ora, infile=is_portata_here)
+                
+                # New method
                 if is_portata_here:
                     portata = self._loop_file_search(dfs=rotate(self.df_level_list, index), data_ora=data_ora, portata_tag=portata_tags.array)
                 else:
@@ -272,11 +293,7 @@ class ParserHera(InformalParserInterface):
                     logging.debug("Not found a portata value for tag: {} data_ora: {} , skip...".format(tag, data_ora))
                     continue
                 
-                self._df_builder["data_ora"].append(data_ora)
-                self._df_builder["livello"].append(real_value)
-                self._df_builder["portata"].append(portata)
-                self._df_builder["cod_pozzo"].append(cod_pozzo)
-                self._df_builder["ambito"].append(ambito)
+                self._add_builder_level(cod_pozzo=cod_pozzo, data_ora=data_ora, livello=real_value, portata=portata, ambito=ambito)
 
                 # Line processed correctly: marked
                 markers[k] = 1
