@@ -52,10 +52,11 @@ def main(argv):
     # db_manager.insert_idro_level(df_idro)
     logging.info('Done')
 
-    if argv.delete:
-        logging.info('Destroying...')
-        destroyer.destroy_hera(file_list, days_ai=argv.daysAI, days_di=argv.daysDI)
-        logging.info('Done')
+    logging.info("Calling destroyer...")
+    moved = destroyer.destroy_hera(file_list=file_list, days_ai=argv.daysAI, days_di=argv.daysDI, soft=not(argv.delete))
+    logging.info("Total: %s", "{}".format(moved))
+    
+    logging.info('Done')
 
 
 
@@ -85,12 +86,12 @@ if __name__ == '__main__':
                         action='store_true', required=False, default=False)
     
     parser.add_argument('-dAI', '--daysAI', metavar='<num_days>',
-                        help='days threshold for AI files default value 4', 
-                        type=int, action=destroyer.DeleteAction, required=False, default=4)
+                        help='days threshold for AI files default value 20', 
+                        type=int, action=destroyer.DeleteAction, required=False, default=20)
     
     parser.add_argument('-dDI', '--daysDI', metavar='<num_days>',
-                        help='days threshold for DI files default value 6', 
-                        type=int, action=destroyer.DeleteAction, required=False, default=6)
+                        help='days threshold for DI files default value 20', 
+                        type=int, action=destroyer.DeleteAction, required=False, default=20)
 
     args = parser.parse_args()
     
