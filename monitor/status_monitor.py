@@ -6,6 +6,12 @@ import pyodbc
 import sys
 import numpy as np
 from datetime import date
+import logging
+
+
+# Logger settings
+FORMAT = '%(levelname)s:%(asctime)-15s %(message)s'
+logging.basicConfig(filename='monitor.log', format=FORMAT, level=logging.INFO)
 
 
 # DB connection for linux server machine
@@ -84,7 +90,7 @@ def from_tuple_list_to_dict(tuple_list):
 
 def color_selection(query_result, weights):
     """
-        This method returns the color of the entire network
+        This method returns the color of the entire "ambito"
     """
     
     # Amount of returned values
@@ -111,10 +117,10 @@ def color_selection(query_result, weights):
         # TODO is this right?
         selected_color = 2
     
-    # print(ratio)
+    
     if ratio > 0.5:
-        # print(percentages.most_common(1)[0][0])
         return colors_list[selected_color]
+
     else:
         # When the probability is the same or there are too many reds status among them, 
         # the color is yellow
@@ -181,7 +187,7 @@ def compute_pozzo_status(values, last_dates, data_months):
         # 2.1 find the minimum value in the last year (this is used to determine the red status)
         min_value_last_year = np.min(levels)
         
-        print("Pozzo: {}, media ultimo giorno: {}, minimo di sempre: {}, mesi totali: {}".format(cod_pozzo, last_day_mean, min_value_last_year, total_data[cod_pozzo]))
+        logging.info("Computing pozzi status: %s", "Pozzo: {}, media ultimo giorno: {}, minimo di sempre: {}, mesi totali: {}".format(cod_pozzo, last_day_mean, min_value_last_year, total_data[cod_pozzo]))
         
         if total_data[cod_pozzo] < 36:
             # if we have less than 3 years of data (36 months), the status is gray (=not considered)
@@ -236,7 +242,7 @@ def main(argv):
     # Fetching current colors (colors.json file)
     with open(args.path) as f:
         data = json.load(f)
-        print(data)
+        logging.info("Color data loaded: \n%s", data)
     
 
     for key in ambito_map.keys():
@@ -256,12 +262,12 @@ def main(argv):
         total_data = cursor.fetchall()
 
         pozzi_status = compute_pozzo_status(values=rows,last_dates=from_tuple_list_to_dict(dates), data_months=total_data)
-        print("Soglie pozzi: {}".format(thresholds_map))
-        print("Stato pozzi {}: {}".format(key,pozzi_status))
-        print()
+        logging.info("Soglie pozzi: %s", "{}".format(thresholds_map))
+        logging.info("Stato pozzi %s", "{}: {}".format(key,pozzi_status))
+        logging.info("\n\n")
 
         # Delete old_status
-        print("Updating status...")
+        logging.info("Updating status...")
         cursor.execute(get_query_delete_old_status(city=key))
         cursor.commit()
 
@@ -270,9 +276,9 @@ def main(argv):
             cursor.execute(query_insert_status, cod_pozzo, key, pozzi_status[cod_pozzo], thresholds_map[cod_pozzo])
             cursor.commit()
         
-        print("Status updated!")
+        logging.info("Status updated!")
 
-        print("Computing weights...")
+        logging.info("Computing weights...")
         cursor.execute(get_query_total_records_per_day(city=key))
         tot_records = cursor.fetchall()
 
@@ -280,44 +286,42 @@ def main(argv):
         last_years = cursor.fetchall()
         
         weights = compute_weight(amount_of_records=tot_records, last_years=last_years, data_months=total_data)
-        print(weights)
-        print("Weights: done.")
+        logging.info("Obtained weights: %s", weights)
+        logging.info("Weights: done.")
 
-        print("Loading new status from db...")
+        logging.info("Loading new status from db...")
         query = "{}'{}'".format(query_stato, key)
         cursor.execute(query)
-        print("Query: {}".format(query))
+        logging.info("Query: %s", "{}".format(query))
         query_results = cursor.fetchall()
 
         if len(query_results) == 0:
             continue
 
-        print("Updating map colors...")
+        logging.info("Updating map colors...")
 
         color = color_selection(query_results, weights=weights)
-        print("Selected color: {}".format(color))
+        logging.info("Selected color: %s", "{}".format(color))
     
         for i in range(len(data['colorList'])):
             if data['colorList'][i]['name'] == ambito_map[key]:
                 data['colorList'][i]['color'] = color
-        print("Colors updated!")
-        # print(data['colorList'])
-        print()
-        print()
+        logging.info("Colors updated!")
+        
+        logging.info("\n\n")
 
     # Writing results on colors.json
-    print("Writing colors.json ...")
+    logging.info("Writing colors.json ...")
     with open(args.path, "w") as f:
         json.dump(data, f)
         
-    
-    cursor.close()
 
-    print("Copying file in docker container {}".format(args.container))
+    logging.info("Copying file in docker container: %s", "{}".format(args.container))
 
     os.system("sudo docker cp {} {}:/geojsonserver/file_to_serve/".format(args.path, args.container))
+    cursor.close()
 
-    print("Done.")
+    logging.info("Done.")
 
 if __name__ == '__main__':
     if os.geteuid() != 0:
