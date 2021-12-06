@@ -2,6 +2,8 @@
 
 Questa cartella contiene i dati delle coordinate dei pluviometri forniti da ARPAE (503).
 
+**N.B.** Questi dati dovranno essere sostituiti o affiancati a quelli presenti al seguente [link](https://sdati-test.datamb.it/erg5-eraclito/).
+
 
 ## DATABASE
 

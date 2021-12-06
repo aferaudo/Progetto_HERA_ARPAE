@@ -7,7 +7,7 @@ conn = pyodbc.connect('Driver={/opt/microsoft/msodbcsql17/lib64/libmsodbcsql-17.
                       'Server=localhost;'
                       'Database=Hera;'
                       'UID=SA;'
-                      'PWD=ServerVMHeraDB1*;')
+                      'PWD=disiDatabase!;')
 cursor = conn.cursor()
 
 
@@ -16,7 +16,7 @@ file_list = os.listdir(".")
 
 
 
-query = "INSERT INTO dbo.COORD_IDRO (nome,territorio,lat,long) values(?,?,?,?)"
+query = "INSERT INTO dbo.COORD_IDRO (nome,lat,long, ambito) values(?,?,?,?)"
 
 
 for k, file_name in enumerate(file_list):

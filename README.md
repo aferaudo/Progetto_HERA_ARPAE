@@ -31,13 +31,11 @@ Questo repository contiene tutti i dati e gli script usati per la realizzazione 
 
 ## TODO
 
-* Upgrade security of geojson server
+* Upgrade security of geojson server (Now is running in a docker container)
 
-* Aggiornare tabella coord con ON DELETE CASCADE
+* Automatizzare l'inserimento dei dati Arape Pozzi
 
-* Inserire i nivometri di Doccia di Fiumalbo e Monteacuto delle Alpi insieme ai pluviometri
-
-* Script che automatizza il processo di inserimento dati nel db
+* Inserire Dati pluviometri di griglia
 
 
 ****
@@ -47,3 +45,7 @@ Questo repository contiene tutti i dati e gli script usati per la realizzazione 
 * Pozzi Campiano e Pianacci di Rimini pochi dati validi (*aggiornati*)
 
 * Script per il calcolo del percentile considera solo i livelli con portata <= 0.3: deve essere chiamato manualmente per ora, in futuro dovrà essere chiamato da chi va ad effettuare l'update settimanale/mensile dei dati, in modo da ottenere il seguente comportamento: *ogni volta che nuovi dati vengono inseriti il percentile cambia e di conseguenza cambia anche la soglia che provoca una modifica dello stato dei singoli pozzi* (EDIT: lo script ora è in grado di calcolare i pesi)
+
+* L'inserimento dei dati Hera avviene in automatico una volta al giorno
+
+* Il calcolo delle soglie avviene una volta a settimana
