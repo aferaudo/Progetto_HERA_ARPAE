@@ -221,7 +221,7 @@ def compute_weight(amount_of_records, last_years, data_months):
     total_data = dict()
     for pozzo in data_months:
         # pozzo[0] cod_pozzo
-        # pozzo[1] cod_pozzo
+        # pozzo[1] months
         total_data[pozzo[0]] = pozzo[1]
 
     weight_dict = dict()
@@ -315,10 +315,9 @@ def main(argv):
     with open(args.path, "w") as f:
         json.dump(data, f)
         
-
-    logging.info("Copying file in docker container: %s", "{}".format(args.container))
-
-    os.system("sudo docker cp {} {}:/geojsonserver/file_to_serve/".format(args.path, args.container))
+    if args.container != None:
+        logging.info("Copying file in docker container: %s", "{}".format(args.container))
+        os.system("sudo docker cp {} {}:/geojsonserver/file_to_serve/".format(args.path, args.container))
     cursor.close()
 
     logging.info("Done.")
@@ -333,7 +332,7 @@ if __name__ == '__main__':
                         help='path of the file "colors.json" (file must be not empty)', type=str, required=True)
 
     parser.add_argument('-c', '--container', metavar='<container_id/container_name>',
-                        help='name of the docker container"', type=str, required=True)
+                        help='name of the docker container"', type=str)
 
     args = parser.parse_args()
     
